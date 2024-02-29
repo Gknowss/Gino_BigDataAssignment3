@@ -1,0 +1,6 @@
+redis:
+  host: redis-19203.c322.us-east-1-2.ec2.cloud.redislabs.com
+  db: 0
+  user: default
+  password: default
+  port: 19203

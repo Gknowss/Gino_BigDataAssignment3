@@ -7,23 +7,28 @@ class plot:
         import matplotlib.pyplot as plt
         import matplotlib.cm as cm
 
+        # Setup subplot and cmap to organize
         fig, ax = plt.subplots()
 
-        idx = self.x.sunrise
-        counts = self.y.sunset
+        #Setup values for x and y
+        idx = self.x.classes
+        counts = self.y.types
 
+        # Decorate plot
         length = len(idx)
         cmap = cm.get_cmap('plasma', length)
 
+        # For every thing in class, match with calculated y values of usage
         i = 0 
         for key, value in zip(idx, counts):
             if (value > 0):
                 ax.bar(key, value, label=key, color = cmap(i))
                 i = i + 1
-                
-        plt.title('Longest Days of Sun ($)')
-        plt.ylabel('Time Of Sun')
-        plt.xlabel('Date')
+        
+        # Now to actually fill in the plot details        
+        plt.title('Most Popular Classes')
+        plt.ylabel('Usage')
+        plt.xlabel('Class')
         plt.xticks(rotation=90)
         plt.legend(bbox_to_anchor=(1.5,1),loc='upper right')
         plt.show()
@@ -35,27 +40,31 @@ class agr:
     
     def aggregate(self):
         import redis
+        from db_config import get_redis_connection
         import redis.commands.search.aggregation as aggregations
         from redis.commands.search.field import TextField, NumericField, TagField
         from redis.commands.search.indexDefinition import IndexDefinition, IndexType
         import redis.commands.search.reducers as reducers
         
-        #
-        r = redis.Redis(host='localhost', port=6379)
-        #
+        # Get redis Connection
+        r = get_redis_connection()
+        
+        # Create fields for which data is to be aggregated
         schema = (
-            TextField("$.name", as_name="name"), 
-            TagField("$.city", as_name="city"), 
-            NumericField("$.age", as_name="age")
+            TextField("$.sets", as_name="sets"), 
+            TagField("$.standard", as_name="standard"), 
+            NumericField("$.wild", as_name="wild")
         )
-        #
-        rs = r.ft("idx:date")
+        
+        # Make index to use aggregation commands built in Python
+        rs = r.ft("idx:sets")
         rs.create_index(
             schema,
             definition=IndexDefinition(
                 prefix=["date:"], index_type=IndexType.JSON
             )
         )
+        # Aggregate
         req = aggregations.AggregateRequest("*").group_by('@city', reducers.count().alias('count'))
         print(rs.aggregate(req).rows)
 
@@ -65,25 +74,12 @@ class basic:
         
     def query(self):
         import redis
+        from db_config import get_redis_connection
         from redis.commands.search.field import TextField, NumericField, TagField
         from redis.commands.search.indexDefinition import IndexDefinition, IndexType
         
-        #
-        r = redis.Redis(host='localhost', port=6379)
-        #
-        schema = (
-            TextField("$.name", as_name="name"), 
-            TagField("$.city", as_name="city"), 
-            NumericField("$.age", as_name="age")
-        )
-        #
-        rs = r.ft("idx:users")
-        rs.create_index(
-            schema,
-            definition=IndexDefinition(
-                prefix=["user:"], index_type=IndexType.JSON
-            )
-        )
-        #
+        # Connect to redis, and get a basic search
+        r = get_redis_connection()
+        r.get('sets')
         
         
